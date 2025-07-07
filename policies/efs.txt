@@ -1,0 +1,5 @@
+security groups all traffic , make sure both are in the same vpc 
+sudo apt update 
+sudo apt install -y nfs-common
+mkdir -p efs 
+paste the sudo nfs ka command 

@@ -1,0 +1,10 @@
+lsblk
+sudo fdisk -l 
+sudo file -s /dev
+sudo mkdir myebsvol
+sudo mkfs -t xfs /dev 
+sudo mount /dev/..  myebsvol 
+
+lsblk
+sudo mount /dev/..  myebsvol 
+
