@@ -1041,4 +1041,3 @@ Show me weather
 
 
 What’s the temperature?
-
