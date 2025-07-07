@@ -1,0 +1,176 @@
+
+SET-8: Canteen Notification System using AWS SNS, SQS, and DynamoDB
+Build a canteen system where:
+Owner manages orders and sends email notifications.
+Customer receives updates on order status.
+Delivery boy is notified of pickup and delivery.
+Feedback and rating are collected via SMS.
+
+Create a DynamoDB Table
+Go to DynamoDB → Create Table
+Table Name: CanteenOrders
+Partition key: OrderID (String)
+Leave the rest default.
+Click Create Table
+
+
+
+
+a. Owner to Customer
+Go to SNS → Topics → Create topic
+Type: Standard
+Name: OwnerToCustomer_Topic
+After creation → Create subscription
+Protocol: Email
+Endpoint: Your verified email
+Confirm email from your inbox.
+📧 b. Owner to Delivery
+Same steps as above.
+Name: OwnerToDelivery_Topic
+Subscription: Email → Delivery boy’s email
+📱 c. Feedback via SMS
+Create Topic: FeedbackSMS_Topic
+Create Subscription:
+Protocol: SMS
+Phone number: Your mobile (+91 format)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Create SQS Queue (Optional for async messaging)
+Go to SQS → Create queue
+Type: Standard
+Name: CanteenQueue
+Leave defaults
+Click Create queue
+
+
+Create Lambda Function — Owner Simulation
+✅ Setup:
+Go to Lambda → Create function
+Name: ProcessCanteenOrder
+Runtime: Python 3.12 ✅ (currently stable)
+Role: Create new role with basic Lambda permissions
+Click Create
+
+
+
+
+
+Update Role Permissions (IMPORTANT!)
+Go to:
+IAM → Roles → ProcessCanteenOrder-role
+Attach the following policies:
+AmazonSNSFullAccess
+AmazonDynamoDBFullAccess
+
+
+
+
+
+
+
+In lambda :
+import boto3
+
+def lambda_handler(event, context):
+    # Initialize clients
+    sns = boto3.client('sns')
+    dynamodb = boto3.resource('dynamodb')
+    
+    # Table
+    table = dynamodb.Table('canteenorders')
+
+    # Store order in DynamoDB
+    order = {
+        'OrderID': 'ORD123',
+        'Customer': 'John',
+        'Status': 'Preparing',
+        'Item': 'Burger'
+    }
+    table.put_item(Item=order)
+
+    # Publish to Customer
+    sns.publish(
+        TopicArn='arn:aws:sns:eu-north-1:876820568095:OwnerToCustomer_Topic',
+        Message='Your order has been accepted and is being prepared.',
+        Subject='Order Update'
+    )
+
+    # Publish to Delivery Boy
+    sns.publish(
+        TopicArn='arn:aws:sns:eu-north-1:876820568095:OwnerToDelivery_Topic',
+        Message='Pick up Order ORD123 from kitchen.',
+        Subject='Delivery Assignment'
+    )
+
+    # Send Feedback SMS
+    sns.publish(
+        TopicArn='arn:aws:sns:eu-north-1:876820568095:FeedbackSMS_Topic',
+        Message='Your order is delivered. Please rate your experience.',
+    )
+
+    return {
+        'statusCode': 200,
+        'body': 'Order processed and notifications sent.'
+    }
+Replace:
+REGION with your AWS region (e.g., us-east-1)
+ACCOUNTID with your AWS account ID
+You can find the Topic ARN in the SNS dashboard.
+
+
+
+Deploy and Test
+Click Deploy
+Choose Test → Create new test event → Keep defaults
+Click Test → Should return 200 OK
+
+
+
+
+Verify the Results
+✅ DynamoDB:
+Go to DynamoDB → Tables → CanteenOrders
+Click Explore table items
+You should see:
+OrderID: ORD123
+Status: Preparing
+etc.
+✅ Email Notifications:
+Check your inbox (the one you subscribed to the OwnerToCustomer_Topic)
+You should receive an email titled: “Order Update”
+Similarly, the delivery person’s inbox will receive an alert
+✅ SMS Notification:
+The phone number subscribed to FeedbackSMS_Topic will get an SMS:
+“Your order is delivered. Please rate your experience.”
+
+
+
+
+
+

@@ -1,0 +1,1044 @@
+Set 1
+
+1. Go to EC2 Dashboard → Launch Instances.
+2. Set the following:
+o Instance Name: 56p_EC2
+o AMI: Choose Ubuntu Server (latest version).
+o Instance Type: t2.micro (Free Tier eligible).
+3. Create a new Key Pair (or use existing):
+o Key Pair Name: 22BD1A056p
+o Key Pair Type: .pem
+o Download the key and save it safely.
+4. Keep default settings for Networking, Storage, etc.
+5. Click Launch Instance.
+
+6. Connect to the terminal
+7. sudo apt update
+8. sudo apt install openjdk-21-jdk -y
+9. Java -version
+10. nano Test.java
+11. Copy paste java code 
+Test.java
+public class Fibonacci {
+    public static void main(String[] args) {
+        int n = 10; // You can change this value
+        int a = 0, b = 1;
+        System.out.println("Fibonacci Series:");
+        for (int i = 1; i <= n; ++i) {
+            System.out.print(a + " ");
+            int sum = a + b;
+            a = b;
+            b = sum;
+        }
+    }
+}
+
+12. java Test.java
+
+
+✅ Step 10: Convert .pem to .ppk
+1. Open PuTTYgen
+2. Click Load → Select 22BD1A056p.pem
+3. Click Save private key → Save as 22BD1A056p.ppk
+
+✅ Step 11: Connect via PuTTY
+1. Open PuTTY
+2. In Host Name, paste:
+3. Connect -> ssh Client -> ubuntu@&lt;your-instance-public-IP&gt;
+4. Go to:
+o Connection → Data → Auto-login username: ubuntu
+o Connection → SSH → Auth →Credentials -> Browse for .ppk file: 22BD1A056p.ppk
+5. Click Open → Accept the prompt
+
+✅ Step 12: Compile &amp; Run Java File in PuTTY
+javac Test.java -> java Test -> output
+Set 2
+
+✅ Create a New Bucket
+1. Click Create bucket.
+2. Fill in:
+o Bucket name: Must be globally unique
+o Region: Choose your closest region.
+3. Uncheck Block all public access (important for static site).
+4. Acknowledge the warning.
+5. Enable s3 versioning
+6. Leave the rest default.
+7. Click Create bucket.
+
+✅Set Bucket Policy for Public Access
+1. Go to Permissions tab → Bucket Policy → Edit.
+2. Click Policy Generator:
+o Type: S3 Bucket Policy
+o Effect: Allow
+o Principal: *
+o Action: GetObject, GetObjectVersion
+o Resource: arn:aws:s3:::your-bucket-name/* (dont forget to add /*)
+3. Click Generate Policy, copy it, and paste in the bucket policy editor. Example:
+4. Save changes.
+
+✅ Upload First File 
+Upload File1.jpeg 
+After upload:
+Right-click the file → Copy URL
+Test in browser
+
+✅ Upload Second File 
+Upload File1.jpeg 
+After upload:
+Right-click the file → Copy URL
+Test in browser
+
+✅ Upload Third File 
+Upload File1.jpeg 
+After upload:
+Right-click the file → Copy URL
+Test in browser
+
+✅ 7. How to See 1st Image (Name + Roll no only)?
+Go to File1.jpeg → Click Versions
+Choose the oldest version
+
+✅ 8. Delete a Particular Image Version
+Go to Object → File1.jpeg → Versions tab
+Select the version → Delete version
+This won’t delete the file entirely, just the version
+
+
+Set 3 - EFS 
+
+✅ Step 1: Launch Two EC2 Instances
+1. Go to EC2 Dashboard → Launch Instances.
+2. Launch two EC2 Instances:
+o Instance 1 Name: Rollno-KMIT
+o Instance 2 Name: Rollno-NGIT
+3. Use the same Key Pair (.pem file) for both.
+4. Default settings (Amazon Linux 2, 8 GiB storage).
+5. Ensure both instances are in the same VPC and Region.
+6. Click Launch Instances.
+
+✅ Step 2: Create a Security Group for EFS
+1. Go to EC2 Dashboard → Security Groups → Create Security Group.
+2. Enter:
+o Name: Rollno_EFS
+o Description: EFS SG
+o VPC: Default VPC
+3. Add two Inbound Rules:
+o Type: NFS
+o Source: Custom → Add security groups of both EC2 instances
+4. Click Create Security Group.
+
+ PART 2: CREATE AND ATTACH EFS
+
+✅ Step 3: Create an EFS File System
+1. Go to AWS Console → Search “EFS” → Elastic File System.
+
+2. Click Create File System. Custom 
+3. Enter the following:
+o Name: Rollno
+o VPC: Default VPC (same as EC2s)
+o Storage class: Standard or One Zone
+o Lifecycle Mgmt: 7 days (optional)
+o Encryption: Disable (optional)
+o Performance mode: General purpose
+o Throughput mode: Elastic
+4. Mount Targets in subnets where your EC2s are running -> Set security group for all the targets
+6. Click Create
+
+✅ Step 4: Attach EFS to EC2 Instances
+1. Go to EFS Dashboard → File systems → Select Rollno.
+2. Click Attach.
+3. Under Mount via NFS client, copy the mount command: Example:
+4. sudo mount -t nfs4 -o nfsvers=4.1 fs-xxxxxxx.efs.us-east-1.amazonaws.com:/ /mnt/efs
+
+ PART 3: MOUNT AND VERIFY EFS
+
+✅ Step 5: Mount EFS on Instance-1 (Rollno-KMIT)
+1. Connect to Instance-1:
+2. ssh -i &quot;yourkey.pem&quot; ec2-user@&lt;Instance-1-Public-IP&gt;
+3. Switch to root:
+4. sudo su -
+5. Install Amazon EFS Utils:
+6. yum install -y amazon-efs-utils
+7. Create mount directory:
+8. mkdir /mnt/efs
+9. Mount the EFS (paste the command from EFS Attach page):
+
+10. mount -t nfs4 -o nfsvers=4.1 fs-xxxxxxx.efs.us-east-1.amazonaws.com:/ /mnt/efs
+11. Verify:
+12. df -h
+
+✅ Step 6: Mount EFS on Instance-2 (Rollno-NGIT)
+1. Connect to Instance-2:
+SAME STEPS OF INSTANCE 1 EXACTLY (check with df -h)
+
+✅ Step 7: Verify File Sharing Between Instances
+On Instance-1 (Rollno-KMIT):
+1. Create a file:
+2. echo “Hello from Rollno-KMIT” >  /mnt/efs/file1.txt
+3. List the file:
+4. ls -l /mnt/efs/
+On Instance-2 (Rollno-NGIT):
+1. List files:
+2. ls -l /mnt/efs/
+3. View contents:
+4. cat /mnt/efs/file1.txt
+✅ Expected Output:
+Hello from Rollno-KMIT
+
+This confirms EFS is successfully shared between both EC2 instances.
+
+Set 4 - S3
+✅ Create a New Bucket
+1. Click Create bucket.
+2. Fill in:
+o Bucket name: name
+o Region: Choose your closest region.
+o Uncheck Block all public access (important for static site).
+o Acknowledge the warning.
+o Leave the rest default.
+o Click Create bucket.
+
+✅ React app
+npx create-react-app s3-welcome-app
+cd s3-welcome-app
+
+import React, { useState } from 'react';
+
+function App() {
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleClick = () => {
+    setMessage(`Hi '${name}!!!' Welcome to S3 Bucket Lab External`);
+  };
+
+  return (
+    <div style={{ textAlign: 'center', marginTop: '100px' }}>
+      <h2>Welcome to AWS S3 Lab</h2>
+      <input
+        type="text"
+        placeholder="Enter Username"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={{ padding: '10px', fontSize: '16px' }}
+      />
+      <br /><br />
+      <button onClick={handleClick} style={{ padding: '10px 20px', fontSize: '16px' }}>
+        Greet Me
+      </button>
+      <br /><br />
+      <h3>{message}</h3>
+    </div>
+  );
+}
+
+export default App;
+
+npm run build
+
+Enable Static Website Hosting
+1. Go to S3 → Your Bucket → Properties.
+2. Scroll down to Static website hosting.
+3. Click Edit → Enable it.
+4. Set:
+o Index document: index.html
+o Error document: index.html (or custom)
+5. Click Save changes.
+
+Set Bucket Policy for Public Access
+1. Go to Permissions tab → Bucket Policy → Edit.
+2. Click Policy Generator:
+o Type: S3 Bucket Policy
+o Effect: Allow
+o Principal: *
+o Action: GetObject
+o Resource: arn:aws:s3:::your-bucket-name/* (dont forget to add /*)
+3. Click Generate Policy, copy it, and paste in the bucket policy editor. Example:
+4. Save changes.
+
+Upload Build Files to S3
+1. Go to S3 → Your Bucket → Objects tab.
+2. Click Upload → Add files & folders.
+3. Select all contents inside the build/ folder (not the folder itself).
+4. Click Upload.
+
+Access the Static Website
+1. Go to Properties tab → Static website hosting section.
+2. Copy the Website Endpoint URL.
+3. Open in a browser — you should see your React app!
+
+✅ You’ve now successfully hosted your React app on AWS S3 as a static website!
+
+
+Set 5 - EBS
+🔹Step 1: Launch EC2 Instance in Region 1 (us-east-1)
+Go to EC2 Dashboard → Launch Instance
+Name: External_22BD1A056P_Region1
+OS: Amazon Linux 2 (Free Tier eligible)
+Instance Type: t2.micro
+Key Pair: Select or create one (External_22BD1A056P.pem)
+Storage: Default (8GB root)
+Network: Default VPC
+Click Launch
+
+🔹 Step 2: Create & Attach Extra 10GB EBS Volume
+Go to Elastic Block Store → Volumes → Create Volume
+Name: Extra_EBS_22BD1A056P
+Size: 10 GiB
+AZ: Match EC2 instance's AZ (us-east-1)
+Volume Type: gp2 or gp3
+Click Create Volume
+
+Attach Volume:
+Go to created volume → Click Actions → Attach Volume
+Select instance External_22BD1A056P_Region1
+Device name: /dev/sdf (or similar)
+Click Attach
+
+🔹 Step 3: Mount and Insert Files into EBS
+Connect to terminal of instance 1
+sudo su -
+lsblk
+file -s /dev/sdf
+mkfs -t ext4 /dev/sdf
+mkdir /data
+mount /dev/sdf /data
+df -h
+cd /data
+echo "This is from Region 1 - External_Rollno" > region1.txt
+ls -l
+cat region1.txt
+
+🔹 Step 4: Take Snapshot of Volume
+Go to EBS → Volumes → Select your 10GB Volume
+Click Actions → Create Snapshot
+Name: Snapshot_22BD1A056P
+Description: "Snapshot of Region1 volume"
+Click Create Snapshot
+
+🔹 Step 5: Copy Snapshot to Region2
+Go to Snapshots → Select Snapshot
+Click Actions → Copy Snapshot
+Select Destination Region (us-west-2)
+Name: Copied_Snapshot_22BD1A056P
+Click Copy Snapshot
+
+🔹 Step 6: Create Volume from Copied Snapshot in Region2
+Change AWS region to Region2
+Go to Snapshots, locate Copied_Snapshot_22BD1A056P
+Click Actions → Create Volume
+Size: 10 GiB
+AZ: Pick one in Region2 (us-west-2)
+Volume Type: gp2
+Name: EBS_Region2_22BD1A056P
+Click Create Volume
+
+🔹 Step 7: Launch EC2 in Region2 and Attach Volume
+Import key-pair
+ssh-keygen -y -f External_22BD1A056P.pem
+
+EC2 → Launch instance
+Name: External_22BD1A056P_Region2
+Use same OS and key pair (you must import .pem to Region2 if not already)
+Launch instance in same AZ as your volume (us-west-2)
+Attach volume:
+Go to volume → Actions → Attach Volume
+Select the new EC2 instance
+Device: /dev/xvdf
+
+Step 8: Connect to instance 2 terminal
+sudo su -
+lsblk
+mkdir /data
+mount /dev/sdf /data
+df -h
+cd /data
+ls -l
+cat region1.txt
+
+Set 7 - VPC
+Step 1: Create VPC
+Go to VPC Dashboard → Your VPCs → Create VPC
+Name tag: VPC_057k
+IPv4 CIDR block: 12.0.0.0/16
+IPv6: No
+Click Create VPC
+
+Step 2: Create Internet Gateway
+Go to Internet Gateways → Create internet gateway
+Name: IGW_057k
+Create → Select → Actions > Attach to VPC → VPC_057k
+
+Step 3: Create Subnets
+Go to Subnets → Create subnet
+VPC: VPC_057k
+Add 2 subnets:
+Public Subnet:
+Name: Public_057k
+AZ: us-east-1a
+CIDR: 12.0.0.0/20
+
+Private Subnet:
+Name: Private_057k
+AZ: us-east-1a
+CIDR: 12.0.16.0/20
+Click Create subnet
+
+🔸 Part 2: Routing Tables
+Step 4: Public Route Table
+Go to Route Tables → Create route table
+Name: PublicRT_057k
+VPC: VPC_057k
+Create
+Edit Routes:
+Destination: 0.0.0.0/0
+Target: Internet Gateway → IGW_057k
+Subnet Association:
+Associate with Public_057k
+
+Step 5: Private Route Table
+Name: PrivateRT_057k
+VPC: VPC_057k
+Associate with Private_057k
+(No route needed to Internet Gateway)
+
+🔸 Part 3: Key Pair
+Go to EC2 → Key Pairs → Create Key Pair
+Name: key_057k
+Type: .pem
+Download and save key_057k.pem file
+
+Use PuTTYgen to convert it to .ppk for PuTTY:
+Load .pem
+Save as key_057k.ppk
+Export .pem from .ppk for later use inside EC2 (Conversions → Export OpenSSH)
+
+🔸 Part 4: Launch EC2 Instances
+Step 6: Public EC2 Instance (Bastion Host)
+Name: Public_057k
+OS: Ubuntu
+Key pair: key_057k
+Network: VPC_057k
+Subnet: Public_057k
+Auto-assign Public IP: Enable
+Security Group: SG_Public_057k
+Inbound: SSH (22) from your IP
+
+Step 7: Private EC2 Instance
+Name: Private_057k
+OS: Ubuntu
+Key pair: key_057k
+Network: VPC_057k
+Subnet: Private_057k
+Auto-assign Public IP: Disable
+Security Group: SG_Private_057k
+Inbound: SSH (22) from SG_Public_057k
+
+🔸 Part 5: SSH Setup (Bastion Method)
+Step 8: SSH into Public EC2
+Using PuTTY:
+Host: ubuntu@<public-ip>
+Auth → Browse: key_057k.ppk
+Connection → Data → Auto-login: ubuntu
+Once connected:
+sudo apt update
+sudo apt install openjdk-21-jdk -y
+
+Step 9: Add Private Key on Bastion EC2
+Export .pem key using PuTTYgen
+On Public EC2:
+nano aws_privatekey_057k.pem
+# Paste key_057k.pem content
+chmod 400 aws_privatekey_057k.pem
+
+Step 10: SSH into Private EC2
+ssh -i aws_privatekey_057k.pem ubuntu@<private-ip>
+
+🔸 Part 6: Add Business Logic (on Public EC2)
+nano RandomGen057k.java
+
+import java.util.Random;
+public class RandomGen057k {
+    public static void main(String[] args) {
+        Random rand = new Random();
+        int num = rand.nextInt(100) + 1;
+        System.out.println("Business Logic: Hello 057k! Your lucky number is: " + num);
+    }
+}
+
+javac RandomGen057k.java
+java RandomGen057k
+
+✅ You will see random output like:
+Business Logic: Hello 057k! Your lucky number is: 84
+
+🔸 Part 7: Confidential File (on Private EC2)
+SSH into Private EC2 (via Bastion), then:
+echo "Confidential: This is secret data for Roll No 057k" > confidential_057k.txt
+cat confidential_057k.txt
+Set 8 - SNS & SQS
+Step 1: Create AWS Resources
+1. SNS Topic
+Name: OrderNotifications_057k
+Add email subscription (e.g., your-email@example.com)
+Confirm email.
+
+2. DynamoDB Table
+Name: CanteenOrders_057k
+Partition Key: order_id (String)
+
+3. SQS Queues
+CustomerQueue_057k
+OwnerQueue_057k
+DeliveryQueue_057k
+
+🔹 Step 2: Lambda #1 - Customer Handler
+📛 Function Name
+CustomerHandler_057k
+
+📦 Permissions
+Attach:
+AmazonDynamoDBFullAccess
+AmazonSNSFullAccess
+AmazonSQSFullAccess
+
+📜 Code (Python 3.12)
+import json
+import boto3
+
+dynamodb = boto3.resource('dynamodb')
+sns = boto3.client('sns')
+sqs = boto3.client('sqs')
+
+TABLE = 'CanteenOrders_057k'
+SNS_TOPIC_ARN = 'arn:aws:sns:<region>:<account-id>:OrderNotifications_057k'
+OWNER_QUEUE_URL = 'https://sqs.<region>.amazonaws.com/<account-id>/OwnerQueue_057k'
+
+def lambda_handler(event, context):
+    for record in event['Records']:
+        msg = json.loads(record['body'])
+        order_id = msg['order_id']
+        item = msg['food_item']
+        email = msg['customer_email']
+
+        table = dynamodb.Table(TABLE)
+        table.put_item(Item={
+            'order_id': order_id,
+            'food_item': item,
+            'status': 'Accepted',
+            'customer_email': email
+        })
+
+        sns.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject='Order Accepted',
+            Message=f"Hi! Your order '{item}' has been accepted. Preparing now!"
+        )
+
+        sqs.send_message(
+            QueueUrl=OWNER_QUEUE_URL,
+            MessageBody=json.dumps({
+                'order_id': order_id,
+                'customer_email': email
+            })
+        )
+
+🔌 Trigger
+Add SQS trigger: CustomerQueue_057k
+
+🔹 Step 3: Lambda #2 - Owner Handler
+📛 Function Name
+OwnerHandler_057k
+
+📦 Permissions
+Same as above
+
+import json
+import boto3
+
+sns = boto3.client('sns')
+sqs = boto3.client('sqs')
+
+SNS_TOPIC_ARN = 'arn:aws:sns:<region>:<account-id>:OrderNotifications_057k'
+DELIVERY_QUEUE_URL = 'https://sqs.<region>.amazonaws.com/<account-id>/DeliveryQueue_057k'
+
+def lambda_handler(event, context):
+    for record in event['Records']:
+        msg = json.loads(record['body'])
+        order_id = msg['order_id']
+        email = msg['customer_email']
+
+        sns.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject='Food Ready',
+            Message=f"Hi! Your food for Order ID: {order_id} is ready and handed to delivery."
+        )
+
+        sqs.send_message(
+            QueueUrl=DELIVERY_QUEUE_URL,
+            MessageBody=json.dumps({
+                'order_id': order_id,
+                'customer_email': email
+            })
+        )
+🔌 Trigger
+Add SQS trigger: OwnerQueue_057k
+
+🔹 Step 4: Lambda #3 - Delivery Handler
+📛 Function Name
+DeliveryHandler_057k
+
+📦 Permissions
+Same as above
+
+📜 Code
+
+import json
+import boto3
+
+sns = boto3.client('sns')
+SNS_TOPIC_ARN = 'arn:aws:sns:<region>:<account-id>:OrderNotifications_057k'
+
+def lambda_handler(event, context):
+    for record in event['Records']:
+        msg = json.loads(record['body'])
+        order_id = msg['order_id']
+        email = msg['customer_email']
+
+        sns.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject='Order Delivered',
+            Message=f"Hi! Your order {order_id} has been delivered successfully!"
+        )
+🔌 Trigger
+Add SQS trigger: DeliveryQueue_057k
+
+🔹 Step 5: Testing the Workflow
+Test Order via Customer Queue
+Go to CustomerQueue_057k → Send Message
+
+Message Body:
+{
+  "order_id": "057k_001",
+  "food_item": "Paneer Wrap",
+  "customer_email": "your-email@example.com"
+}
+✅ This will trigger the full workflow:
+
+Adds to DynamoDB
+
+Sends 3 emails: Order Accepted → Food Ready → Delivered
+Set 9 -LEX
+amazon CLI
+
+ Run the following commands one by one to create the layer structure and install required packages:
+mkdir my-layer
+cd my-layer
+mkdir python
+pip install requests -t python/
+pip install beautifulsoup4 -t python/
+cd ..
+
+
+cd my-layer
+zip -r ../my-layer.zip python/
+ 
+
+Make sure your zip file is created: 
+ls -lh
+ 
+                                                
+5.Click Actions -> Download file
+ 
+Enter the file path and click on Download
+ 
+The zip folder structure should be as follows: 
+my-layer.zip
+└── python/
+    ├── requests/
+    └── bs4/
+Step 2: Create a Lambda Layer
+1.  Open the Lambda service in AWS Console.
+2. Click on “Layers” in the left menu.
+3. Click Create layer.
+4. Enter the layer name (e.g., requests-bs4-layer).
+5. Upload the my-layer.zip file.
+6. Select Compatible runtimes as: Python 3.13.
+7. Click Create. 
+ 
+
+Step 3: Create a Lambda Function
+1.	Click Create function.
+2.	Choose Author from scratch.
+3.	Enter the function name as GetGoldRates.
+4.	Select Python 3.13 as the runtime.
+5.	Click Create function.
+ 
+Step 4: Attach the Lambda Layer to the Function
+1.	Scroll down to the Layers section of the Lambda function page.
+2.	Click Add a layer.
+3.	Choose Custom Layers.
+4.	Select the requests-bs4-layer which we created earlier.
+5.	Version: 1
+6.	Click Add.
+ 
+Figure-8.11:Adding Layer
+Step 5: Edit the General Configuration 
+1.	Go to Configuration.
+2.	Click Edit.
+3.	Memory: 512 MB.
+4.	Timeout: 45 sec (to ensure webscraping happens)
+5.	Click Save.
+ 
+Figure-8.11: Editing configuration
+Step 6: 
+Go to the Code section and paste the following code.
+import urllib.request
+from bs4 import BeautifulSoup
+
+def lambda_handler(event, context):
+    url = 'https://www.bankbazaar.com/gold-rate.html'
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req) as response:
+        html = response.read()
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    table = soup.find('table')
+    hyderabad_rate_24k = None
+
+    if table:
+        rows = table.find_all('tr')
+        for row in rows[1:]:
+            cols = row.find_all('td')
+            if len(cols) >= 3:
+                city = cols[0].get_text(strip=True).lower()
+                rate_24k = cols[2].get_text(strip=True).split('(')[0].strip()
+                if city == 'hyderabad':
+                    hyderabad_rate_24k = rate_24k
+                    break
+
+    if hyderabad_rate_24k:
+        message = f"The current 24K gold rate in Hyderabad is {hyderabad_rate_24k}."
+    else:
+        message = "Sorry, I couldn’t find the gold rate for Hyderabad."
+
+    return {
+        "sessionState": {
+            "dialogAction": {
+                "type": "Close"
+            },
+            "intent": {
+                "name": "GetGoldRate",
+                "state": "Fulfilled"
+            }
+        },
+        "messages": [
+            {
+                "contentType": "PlainText",
+                "content": message
+            }
+        ]
+    }
+
+Note: Intent name in the code should match with the intent name which we are going to create later (in Lex).
+Deploy the code.
+ 
+
+Create a new test event.
+Name: goldtest
+Event JSON: {}
+Click on Save
+Run the test (On successful execution, we get Status: Succeeded).
+ 
+ 
+Step 7: Create a Lex Bot
+1.	Open the Lex service from the AWS Console.
+2.	Click Create bot.
+3.	Enter the bot name as GoldRateBot.
+4.	Runtime role: Create a role with basic Amazon Lex permissions
+5.	COPPA: No
+6.	Select English (US) as the language.
+7.	Click Next, then click Done.
+ 
+                                                             
+Step 8: Create and Configure the Intent
+1.	Go to Intents tab.
+2.	Click Add Intent > Add empty intent.
+3.	Name the intent: GetGoldRate.
+ 
+                                                
+4.Add the following sample utterances:
+What is the gold rate?
+Tell me Hyderabad gold price
+Gold rate today
+What is the gold price in Hyderabad?
+ 
+                                                         
+5.Scroll to the Fulfillment section.
+6.Turn on Lambda function fulfillment.
+7.Click Save Intent.
+ 
+                                                       
+Step 9: Connect Lambda to Lex Alias
+1.	In the left panel, go to Aliases.
+2.	Click on the alias: TestBotAlias.
+3.	Under Languages, click on English.
+4.	Select your Lambda function: GetGoldRates.
+5.	Click Save.
+ 
+                                      
+Step 10: Build and Test the Bot
+1.	Go back to the Intents page.
+2.	Click Build to build the bot.
+3.	Once build is complete, click Test.
+4.	Try any sample utterance like:
+What is the gold rate?
+
+Set 10 - CloudFront
+
+Set 12 - DynamoDB (student)
+Step 1: Create DynamoDB Table
+Go to AWS Console → DynamoDB → Tables → Create Table
+Table Name: RollNo_StudentDB
+Partition key: Student_RollNo(String)
+Click Create Table
+
+Step 2: Go to cloudshell
+nano employee_dynamodb_operations.py
+
+import boto3
+import random
+from collections import defaultdict
+
+# Initialize DynamoDB
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('RollNo_StudentDB')
+
+# -----------------------------------------------
+# Step 1: Insert 15 Random Students
+# -----------------------------------------------
+names = ["Alice", "Bob", "Charlie", "David", "Eva", "Frank", "Grace", "Harry", "Ivy", "John", "Kiran", "Luna", "Mike", "Nina", "Omar"]
+subjects = ["Math", "Science", "History", "English", "Physics"]
+
+print("🟢 Inserting 15 students...")
+for i in range(15):
+    roll_no = f"S{i+1:03}"
+    table.put_item(
+        Item={
+            "Student_RollNo": roll_no,
+            "Student_Name": names[i],
+            "Favourite_Subject": random.choice(subjects),
+            "Subject_Rating": random.randint(1, 5)
+        }
+    )
+print("✅ Students inserted.\n")
+
+# -----------------------------------------------
+# Step 2: Print Students Alphabetically by Name
+# -----------------------------------------------
+print("🔹 Students in Alphabetical Order:")
+response = table.scan()
+students = response['Items']
+sorted_students = sorted(students, key=lambda x: x['Student_Name'])
+
+for s in sorted_students:
+    print(f"{s['Student_Name']} ({s['Student_RollNo']}) - {s['Favourite_Subject']} - Rating: {s['Subject_Rating']}")
+
+# -----------------------------------------------
+# Step 3: Count How Many Have Rating = 5
+# -----------------------------------------------
+count_5star = sum(1 for s in students if s['Subject_Rating'] == 5)
+print(f"\n⭐️ Total Students with Rating 5: {count_5star}")
+
+# -----------------------------------------------
+# Step 4: Average Rating per Subject
+# -----------------------------------------------
+subject_totals = defaultdict(list)
+for s in students:
+    subject_totals[s['Favourite_Subject']].append(s['Subject_Rating'])
+
+print("\n📊 Average Ratings per Subject:")
+for subject, ratings in subject_totals.items():
+    avg = sum(ratings) / len(ratings)
+    print(f"{subject}: {avg:.2f}")
+
+# -----------------------------------------------
+# Step 5: Update Student Name
+# -----------------------------------------------
+update_roll = "S005"
+new_name = "Updated_Student"
+print(f"\n🔄 Updating student {update_roll}'s name to {new_name}...")
+table.update_item(
+    Key={"Student_RollNo": update_roll},
+    UpdateExpression="SET Student_Name = :name",
+    ExpressionAttributeValues={":name": new_name}
+)
+print("✅ Name updated.")
+
+# -----------------------------------------------
+# Step 6: Delete Duplicate Names (if any)
+# -----------------------------------------------
+print("\n🗑 Checking for duplicate names...")
+seen = set()
+duplicates = []
+
+for s in students:
+    name = s['Student_Name']
+    if name in seen:
+        duplicates.append(s['Student_RollNo'])
+    else:
+        seen.add(name)
+
+if not duplicates:
+    print("✅ No duplicates found.")
+else:
+    for roll in duplicates:
+        table.delete_item(Key={"Student_RollNo": roll})
+        print(f"❌ Deleted duplicate: {roll}")
+
+
+Set 13 - DynamoDB (employee)
+Step 1: Create DynamoDB Table
+Go to AWS Console → DynamoDB → Tables → Create Table
+Table Name: RollNo_EmployeeDB
+Partition key: Employee_No (String)
+Click Create Table
+
+Step 2: Go to cloudshell
+nano employee_dynamodb_operations.py
+
+import boto3
+import random
+
+# Initialize DynamoDB
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('RollNo_EmployeeDB')
+
+# -----------------------------------------------
+# Step 1: Insert 10 Random Employees
+# -----------------------------------------------
+names = ["Alice", "Bob", "Charlie", "David", "Eva", "Frank", "Grace", "Harry", "Ivy", "John"]
+departments = ["HR", "IT", "Finance", "Sales", "Marketing"]
+
+print("🟢 Inserting 10 employee records...")
+for i in range(10):
+    salary = random.randint(10000, 50000)
+    table.put_item(
+        Item={
+            "Employee_No": f"EMP{i+1:03}",
+            "Employee_Name": names[i],
+            "Employee_Dept": random.choice(departments),
+            "Employee_sal": salary
+        }
+    )
+print("✅ Employees inserted.\n")
+
+# -----------------------------------------------
+# Step 2: Print Employees in Alphabetical Order
+# -----------------------------------------------
+print("🔹 Employees in Alphabetical Order:")
+response = table.scan()
+employees = response['Items']
+sorted_employees = sorted(employees, key=lambda x: x['Employee_Name'])
+
+for emp in sorted_employees:
+    print(f"{emp['Employee_Name']} ({emp['Employee_No']}) - Dept: {emp['Employee_Dept']} - ₹{emp['Employee_sal']}")
+
+# -----------------------------------------------
+# Step 3: Calculate Total Salary
+# -----------------------------------------------
+total_salary = sum(emp['Employee_sal'] for emp in employees)
+print(f"\n💰 Total Salary of Employees: ₹{total_salary}\n")
+
+# -----------------------------------------------
+# Step 4: Update Salary from ₹10000 to ₹10500
+# -----------------------------------------------
+print("🔄 Updating employees with ₹10000 salary to ₹10500...")
+updated = False
+for emp in employees:
+    if emp['Employee_sal'] == 10000:
+        table.update_item(
+            Key={"Employee_No": emp["Employee_No"]},
+            UpdateExpression="SET Employee_sal = :new",
+            ExpressionAttributeValues={":new": 10500}
+        )
+        updated = True
+if updated:
+    print("✅ Update complete.")
+else:
+    print("ℹ️ No employee with salary ₹10000 found.")
+
+# -----------------------------------------------
+# Step 5: Delete an Employee (Example: EMP005)
+# -----------------------------------------------
+delete_emp_no = "EMP005"
+print(f"\n🗑 Deleting employee {delete_emp_no} (if exists)...")
+try:
+    table.delete_item(Key={"Employee_No": delete_emp_no})
+    print(f"✅ {delete_emp_no} deleted (if existed).")
+except Exception as e:
+    print(f"❌ Error deleting {delete_emp_no}: {e}")
+
+python3 employee_dynamodb_operations.py
+
+Set 14 -LEX (weather)
+⚠️ intent name is GetWeather — keep this same in the Lex intent step.
+
+import requests
+from bs4 import BeautifulSoup
+
+def lambda_handler(event, context):
+    try:
+        url = 'https://weather.com/weather/today/l/Hyderabad+Telangana?canonicalCityId=47118f37645044a2b317bd0702bb1057d4de0294eaa3311ab529b0d531ecf556'
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        response = requests.get(url, headers=headers)
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Scrape temperature
+        temp_element = soup.find('span', class_='CurrentConditions--tempValue--MHmYY')
+        if temp_element:
+            temperature = temp_element.text
+            message = f"Today's Weather is {temperature} in Hyderabad."
+        else:
+            message = "Sorry, could not fetch weather at the moment."
+
+    except Exception as e:
+        message = f"Error occurred: {str(e)}"
+
+    return {
+        "sessionState": {
+            "dialogAction": {
+                "type": "Close"
+            },
+            "intent": {
+                "name": "GetWeather",
+                "state": "Fulfilled"
+            }
+        },
+        "messages": [
+            {
+                "contentType": "PlainText",
+                "content": message
+            }
+        ]
+    }
+
+Intent Name: GetWeather ✅ (matches Lambda return)
+
+What is the current weather?
+
+
+Weather in Hyderabad?
+
+
+Show me weather
+
+
+What’s the temperature?
+
